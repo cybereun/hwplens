@@ -1,0 +1,390 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>HwpLens - 윈도우 탐색기 스타일 한글 뷰어</title>
+  
+  <!-- Google Fonts: Inter, Noto Sans KR -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Noto+Sans+KR:wght@300;400;500;700&display=swap" rel="stylesheet">
+  
+  <!-- Lucide Icons CDN -->
+  <script defer src="https://unpkg.com/lucide@latest/dist/umd/lucide.min.js"></script>
+  
+  <link rel="stylesheet" href="/style.css">
+  <link rel="icon" href="/icons/favicon.png" type="image/png">
+</head>
+<body>
+  <div class="app-layout">
+    <!-- 상단 영역: 윈도우 탐색기 헤더 (툴바 및 네비게이션) -->
+    <header class="app-header">
+      <!-- 1층: 탐색기 명령어 도구 모음 -->
+      <div class="toolbar-actions">
+        <div class="toolbar-section">
+          <button id="btnToggleSidebar" class="toolbar-btn" title="탐색 창 켜기/끄기"><i data-lucide="sidebar"></i> <span>탐색 창</span></button>
+        </div>
+        <div class="toolbar-divider-v"></div>
+        <div class="toolbar-section">
+          <button id="btnNew" class="toolbar-btn disabled" title="새로 만들기"><i data-lucide="plus"></i> <span>새로 만들기</span></button>
+        </div>
+        <div class="toolbar-divider-v"></div>
+        <div class="toolbar-section">
+          <button id="btnCut" class="toolbar-btn icon-only disabled" title="잘라내기"><i data-lucide="scissors"></i></button>
+          <button id="btnCopy" class="toolbar-btn icon-only disabled" title="복사"><i data-lucide="copy"></i></button>
+          <button id="btnPaste" class="toolbar-btn icon-only disabled" title="붙여넣기"><i data-lucide="clipboard"></i></button>
+          <button id="btnRename" class="toolbar-btn icon-only disabled" title="이름 바꾸기"><i data-lucide="pencil"></i></button>
+          <button id="btnDelete" class="toolbar-btn icon-only disabled" title="삭제"><i data-lucide="trash-2"></i></button>
+        </div>
+        <div class="toolbar-divider-v"></div>
+        <div class="toolbar-section">
+          <button id="btnSort" class="toolbar-btn" title="정렬"><i data-lucide="arrow-up-down"></i> <span>정렬</span></button>
+          <button id="btnViewOption" class="toolbar-btn" title="보기"><i data-lucide="layout-grid"></i> <span>보기</span></button>
+        </div>
+        
+        <!-- 앱 타이틀 영역 (우측 정렬) -->
+        <div class="app-title-container" style="margin-left: auto; display: flex; align-items: center; gap: 8px; padding-right: 8px; user-select: none;">
+          <img src="/assets/hwplens_icon.png" alt="HwpLens" style="width: 20px; height: 20px; object-fit: contain; border-radius: 4px;">
+          <span style="font-size: 13px; font-weight: 700; color: #0078d4; font-family: var(--font-family); letter-spacing: 0.5px;">HwpLens</span>
+        </div>
+      </div>
+      
+      <!-- 2층: 주소 경로창 및 탐색 단추 -->
+      <div class="toolbar-navigation">
+        <div class="nav-buttons">
+          <button id="btnBack" class="nav-btn disabled" title="뒤로 가기"><i data-lucide="arrow-left"></i></button>
+          <button id="btnForward" class="nav-btn disabled" title="앞으로 가기"><i data-lucide="arrow-right"></i></button>
+          <button id="btnUp" class="nav-btn" title="상위 폴더로 이동"><i data-lucide="arrow-up"></i></button>
+          <button id="btnRefresh" class="nav-btn" title="새로고침"><i data-lucide="refresh-cw"></i></button>
+        </div>
+        
+        <!-- 윈도우 스타일 주소 입력줄 -->
+        <div class="address-bar-container">
+          <i data-lucide="monitor" class="address-pc-icon"></i>
+          <div id="breadcrumbList" class="breadcrumb-list">
+            <!-- JS에서 동적으로 브레드크럼 조각 생성 -->
+            <span>내 PC</span>
+          </div>
+          <input type="text" id="addressInput" class="address-input hidden" title="주소 입력">
+        </div>
+        
+        <!-- 검색 상자 -->
+        <div class="search-box-container">
+          <i data-lucide="search" class="search-icon"></i>
+          <input type="text" id="searchInput" placeholder="내 PC 검색" title="검색">
+        </div>
+      </div>
+    </header>
+
+    <!-- 메인 영역: 3단 분할 레이아웃 -->
+    <div class="app-body-container">
+      <!-- 1단 (좌측): 계층형 폴더 트리 뷰 -->
+      <aside class="sidebar-tree">
+        <!-- 즐겨찾기 아코디언 헤더 -->
+        <div class="tree-root quick-access-header" id="quickAccessHeader">
+          <div class="tree-node active-path" style="padding-left: 12px; display: flex; justify-content: space-between; align-items: center; width: 100%;">
+            <div style="display: flex; align-items: center;">
+              <i data-lucide="star" class="node-icon root-icon" style="color: #6366f1;"></i>
+              <span class="node-text" style="font-weight: 600;">즐겨찾기</span>
+            </div>
+            <span class="quick-access-toggle open" id="quickAccessToggle" style="cursor: pointer; padding: 2px;">
+              <i data-lucide="chevron-down" style="width: 14px; height: 14px; color: #6b7280;"></i>
+            </span>
+          </div>
+        </div>
+
+        <!-- 바로가기 / 즐겨찾기 그룹 컨테이너 -->
+        <div id="quickAccessContainer" class="quick-access-container tree-children-container">
+          <!-- JS에서 동적으로 바로가기 노드들 생성 주입 -->
+        </div>
+
+        <div class="sidebar-divider-h"></div>
+
+        <div class="tree-root">
+          <div class="tree-node root-node active-path" data-path="drives">
+            <span class="tree-toggle-arrow open"><i data-lucide="chevron-down"></i></span>
+            <i data-lucide="monitor" class="node-icon root-icon"></i>
+            <span class="node-text">내 PC</span>
+          </div>
+          <div id="treeContainer" class="tree-children-container">
+            <!-- JS에서 동적으로 드라이브 및 하위 폴더 트리 삽입 -->
+            <div class="tree-loading">
+              <div class="small-spinner"></div>
+              <span>드라이브 로드 중...</span>
+            </div>
+          </div>
+        </div>
+      </aside>
+
+      <!-- 1단과 2단 경계: 좌측 창 크기 조절 스플리터 -->
+      <div id="sidebarResizer" class="pane-resizer"></div>
+
+      <!-- 2단 (중앙): 파일/폴더 상세 리스트 (윈도우 탐색기 상세 정보 보기 스타일) -->
+      <section class="middle-list">
+        <div class="list-header-status">
+          <span id="itemsCountLabel">0개 항목</span>
+        </div>
+        <div class="list-table-wrapper">
+          <table class="explorer-table">
+            <thead>
+              <tr>
+                <th class="col-name" style="width: 100%;">이름</th>
+              </tr>
+            </thead>
+            <tbody id="fileListBody">
+              <!-- JS에서 폴더와 한글 파일 목록을 바인딩 -->
+              <tr>
+                <td colspan="1" class="table-empty-message">
+                  폴더를 선택하십시오.
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+      <!-- 2단과 3단 경계: 우측 창 크기 조절 스플리터 -->
+      <div id="viewerResizer" class="pane-resizer"></div>
+
+      <!-- 3단 (우측): 한글 문서 미리보기 영역 (윈도우 미리보기 창) -->
+      <main class="viewer-area">
+        <!-- 웰컴 화면 (파일 선택 전 또는 문서 닫힌 상태) -->
+        <div id="welcomeScreen" class="welcome-screen">
+          <div class="welcome-card">
+            <i data-lucide="file-text" class="welcome-icon"></i>
+            <h3>미리 볼 파일을 선택하십시오.</h3>
+            <p>가운데 리스트에서 한글 문서(.hwp, .hwpx)를 선택하면 여기에 내용이 표시됩니다.</p>
+          </div>
+        </div>
+
+        <!-- 뷰어 콘텐츠 (실제 문서 로드 시 활성화) -->
+        <div id="viewerContent" class="viewer-content hidden">
+          <!-- 뷰어 상단 메타데이터 -->
+          <header class="metadata-header">
+            <div class="doc-info-main">
+              <div class="doc-title-row">
+                <i data-lucide="file-text" class="doc-icon"></i>
+                <h4 id="docName">문서명.hwp</h4>
+              </div>
+            </div>
+            
+            <!-- 세부 정보 2x2 그리드 카드 -->
+            <div class="doc-details-grid">
+              <div class="detail-item">
+                <span class="detail-label">유형</span>
+                <span id="docTypeBadge" class="detail-value-badge type-badge">HWP 문서</span>
+              </div>
+              <div class="detail-item">
+                <span class="detail-label">크기</span>
+                <span id="docSizeBadge" class="detail-value-badge size-badge">0 KB</span>
+              </div>
+              <div class="detail-item">
+                <span class="detail-label">수정된 날짜</span>
+                <span id="docModifiedDate" class="detail-value-txt">-</span>
+              </div>
+              <div class="detail-item">
+                <span class="detail-label">페이지 수</span>
+                <span id="docPagesBadge" class="detail-value-badge pages-badge">0 쪽</span>
+              </div>
+            </div>
+          </header>
+
+          <!-- 뷰어 액션 툴바 (페이지 및 줌 제어) -->
+          <div class="viewer-toolbar">
+            <div class="toolbar-group page-controls">
+              <button id="btnPrevPage" class="btn-toolbar" title="이전 페이지"><i data-lucide="chevron-left"></i></button>
+              <span class="page-indicator"><span id="lblCurrentPage">1</span> / <span id="lblTotalPages">1</span></span>
+              <button id="btnNextPage" class="btn-toolbar" title="다음 페이지"><i data-lucide="chevron-right"></i></button>
+            </div>
+            <div class="toolbar-divider-v"></div>
+            <div class="toolbar-group zoom-controls">
+              <button id="btnZoomOut" class="btn-toolbar" title="축소"><i data-lucide="zoom-out"></i></button>
+              <span id="lblZoom" class="zoom-indicator">100%</span>
+              <button id="btnZoomIn" class="btn-toolbar" title="확대"><i data-lucide="zoom-in"></i></button>
+              <button id="btnFitWidth" class="btn-toolbar" title="너비 맞춤"><i data-lucide="maximize-2"></i></button>
+            </div>
+            <div class="toolbar-divider-v"></div>
+            <div class="toolbar-group document-actions">
+              <button id="btnReloadDoc" class="btn-toolbar" title="문서 새로고침"><i data-lucide="refresh-cw"></i></button>
+            </div>
+          </div>
+
+          <!-- 뷰어 본문 뷰포트 (실제 SVG가 들어갈 영역) -->
+          <div id="viewerViewport" class="viewer-viewport">
+            <div id="svgContainer" class="svg-container">
+              <!-- 동적으로 생성된 SVG 문서 주입 -->
+            </div>
+          </div>
+        </div>
+      </main>
+    </div>
+  </div>
+
+  <!-- 윈도우 11 순정 스타일 아크릴 컨텍스트 메뉴 -->
+  <div id="contextMenu" class="context-menu hidden">
+    <!-- 1층: 가로 버튼 툴바 -->
+    <div class="ctx-toolbar">
+      <button class="ctx-tool-btn" id="ctxCut" title="잘라내기"><i data-lucide="scissors"></i><span>잘라내기</span></button>
+      <button class="ctx-tool-btn" id="ctxCopy" title="복사"><i data-lucide="copy"></i><span>복사</span></button>
+      <button class="ctx-tool-btn" id="ctxRename" title="이름 바꾸기"><i data-lucide="pencil"></i><span>이름 바꾸기</span></button>
+      <button class="ctx-tool-btn" id="ctxDelete" title="삭제"><i data-lucide="trash-2"></i><span>삭제</span></button>
+    </div>
+    <div class="ctx-divider"></div>
+    <!-- 2층: 세로 메뉴 리스트 -->
+    <div class="ctx-menu-list">
+      <div class="ctx-item" id="ctxOpen">
+        <i data-lucide="play" class="ctx-icon ctx-accent-icon"></i>
+        <span class="ctx-text">열기</span>
+        <span class="ctx-shortcut">Enter</span>
+      </div>
+
+      <div class="ctx-item" id="ctxPin">
+        <i data-lucide="star"></i>
+        <span class="ctx-text">즐겨찾기에 추가</span>
+      </div>
+
+      <div class="ctx-item" id="ctxCopyPath">
+        <i data-lucide="copy"></i>
+        <span class="ctx-text">경로로 복사</span>
+        <span class="ctx-shortcut">Ctrl+Shift+C</span>
+      </div>
+      <div class="ctx-item" id="ctxProperties">
+        <i data-lucide="settings"></i>
+        <span class="ctx-text">속성</span>
+        <span class="ctx-shortcut">Alt+Enter</span>
+      </div>
+      
+
+    </div>
+  </div>
+
+  <!-- 정렬 드롭다운 메뉴 (신규 추가) -->
+  <div id="sortMenu" class="context-menu hidden">
+    <div class="ctx-menu-list">
+      <div class="ctx-item sort-field-item" data-field="name">
+        <span class="sort-check">&bull;</span>
+        <span class="ctx-text">이름</span>
+      </div>
+      <div class="ctx-item sort-field-item" data-field="date">
+        <span class="sort-check"></span>
+        <span class="ctx-text">수정한 날짜</span>
+      </div>
+      <div class="ctx-item sort-field-item" data-field="type">
+        <span class="sort-check"></span>
+        <span class="ctx-text">유형</span>
+      </div>
+      <div class="ctx-item sort-field-item" data-field="size">
+        <span class="sort-check"></span>
+        <span class="ctx-text">크기</span>
+      </div>
+      <div class="ctx-divider"></div>
+      <div class="ctx-item sort-order-item" data-order="asc">
+        <span class="sort-check">&bull;</span>
+        <span class="ctx-text">오름차순</span>
+      </div>
+      <div class="ctx-item sort-order-item" data-order="desc">
+        <span class="sort-check"></span>
+        <span class="ctx-text">내림차순</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- 보기 드롭다운 메뉴 (신규 추가) -->
+  <div id="viewMenu" class="context-menu hidden">
+    <div class="ctx-menu-list">
+      <div class="ctx-item view-option-item" data-view="extra-large">
+        <span class="sort-check"></span>
+        <i data-lucide="layout-grid"></i>
+        <span class="ctx-text">아주 큰 아이콘</span>
+      </div>
+      <div class="ctx-item view-option-item" data-view="large">
+        <span class="sort-check"></span>
+        <i data-lucide="grid"></i>
+        <span class="ctx-text">큰 아이콘</span>
+      </div>
+      <div class="ctx-item view-option-item" data-view="medium">
+        <span class="sort-check"></span>
+        <i data-lucide="layout"></i>
+        <span class="ctx-text">보통 아이콘</span>
+      </div>
+      <div class="ctx-item view-option-item" data-view="small">
+        <span class="sort-check"></span>
+        <i data-lucide="layout-dashboard"></i>
+        <span class="ctx-text">작은 아이콘</span>
+      </div>
+      <div class="ctx-item view-option-item" data-view="list">
+        <span class="sort-check"></span>
+        <i data-lucide="list"></i>
+        <span class="ctx-text">목록</span>
+      </div>
+      <div class="ctx-item view-option-item" data-view="details">
+        <span class="sort-check"></span>
+        <i data-lucide="layout-list"></i>
+        <span class="ctx-text">자세히</span>
+      </div>
+      <div class="ctx-item view-option-item" data-view="tile">
+        <span class="sort-check"></span>
+        <i data-lucide="grid-3x3"></i>
+        <span class="ctx-text">타일</span>
+      </div>
+      <div class="ctx-item view-option-item" data-view="content">
+        <span class="sort-check">&bull;</span>
+        <i data-lucide="list-todo"></i>
+        <span class="ctx-text">내용</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- 윈도우 스타일 속성 모달 -->
+  <div id="propertiesModal" class="modal-overlay hidden">
+    <div class="properties-dialog">
+      <header class="modal-header">
+        <span class="modal-title"><i data-lucide="file-text" class="modal-title-icon"></i> <span id="propTitleName">문서</span> 속성</span>
+        <button id="btnCloseProps" class="modal-close-btn" title="닫기"><i data-lucide="x"></i></button>
+      </header>
+      <div class="modal-tabs">
+        <button class="modal-tab active">일반</button>
+      </div>
+      <div class="modal-content">
+        <div class="prop-row prop-header-row">
+          <i data-lucide="file-text" class="prop-file-large-icon"></i>
+          <input type="text" id="propFileName" readonly class="prop-name-input">
+        </div>
+        <div class="modal-divider"></div>
+        <div class="prop-row">
+          <span class="prop-label">파일 형식:</span>
+          <span class="prop-value" id="propFileType">한글 문서 (.hwp)</span>
+        </div>
+        <div class="prop-row">
+          <span class="prop-label">연결 프로그램:</span>
+          <span class="prop-value" id="propFileApp"><i data-lucide="external-link" class="inline-icon"></i> 한글 (HWP) 프로그램</span>
+        </div>
+        <div class="modal-divider"></div>
+        <div class="prop-row">
+          <span class="prop-label">위치:</span>
+          <span class="prop-value selectable-path" id="propFilePath">C:\Downloads</span>
+        </div>
+        <div class="prop-row">
+          <span class="prop-label">크기:</span>
+          <span class="prop-value" id="propFileSize">0 KB (0 Bytes)</span>
+        </div>
+        <div class="modal-divider"></div>
+        <div class="prop-row">
+          <span class="prop-label">수정된 날짜:</span>
+          <span class="prop-value" id="propFileMtime">-</span>
+        </div>
+      </div>
+      <footer class="modal-footer">
+        <button id="btnPropConfirm" class="modal-btn primary-btn">확인</button>
+        <button id="btnPropCancel" class="modal-btn">취소</button>
+      </footer>
+    </div>
+  </div>
+
+  <!-- 토스트 알림창 -->
+  <div id="toast" class="toast hidden"></div>
+
+  <script type="module" src="/app.js"></script>
+</body>
+</html>

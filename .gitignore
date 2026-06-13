@@ -1,0 +1,12 @@
+node_modules/
+build/
+dist/
+install/
+*.exe
+*.log
+*.hwp
+*.svg
+.DS_Store
+temp_*.py
+test_*
+.env

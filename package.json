@@ -1,0 +1,45 @@
+{
+  "name": "hwplens",
+  "version": "1.0.0",
+  "description": "HWP Document Explorer & Previewer",
+  "main": "main.js",
+  "scripts": {
+    "setup": "node setup.js",
+    "start": "electron .",
+    "dev": "nodemon server.js",
+    "dist": "electron-builder"
+  },
+  "dependencies": {
+    "express": "^4.19.2",
+    "@rhwp/core": "^0.7.15"
+  },
+  "devDependencies": {
+    "electron": "^30.0.0",
+    "electron-builder": "^24.13.3",
+    "nodemon": "^3.1.0"
+  },
+  "build": {
+    "appId": "com.hwpview.app",
+    "productName": "HwpLens",
+    "directories": {
+      "output": "dist"
+    },
+    "win": {
+      "target": "nsis",
+      "icon": "build/icon.ico"
+    },
+    "nsis": {
+      "oneClick": false,
+      "language": "1042",
+      "allowToChangeInstallationDirectory": true,
+      "runAfterFinish": true,
+      "installerIcon": "build/icon.ico",
+      "uninstallerIcon": "build/icon.ico",
+      "installerSidebar": "build/installerSidebar.bmp",
+      "installerHeader": "build/installerHeader.bmp",
+      "license": "license.txt"
+    }
+  },
+  "type": "commonjs",
+  "author": "Gogo_Lebi"
+}
