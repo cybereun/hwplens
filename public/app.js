@@ -1,5 +1,75 @@
 import init, { HwpDocument } from './rhwp.js';
 
+// --- [썸네일 매니저 (지연 로딩)] ---
+const thumbnailCache = new Map();
+const thumbnailQueue = [];
+let isProcessingThumbnail = false;
+let thumbnailObserver = null;
+
+function initThumbnailObserver() {
+  thumbnailObserver = new IntersectionObserver((entries, observer) => {
+    entries.forEach(entry => {
+      if (entry.isIntersecting) {
+        const path = entry.target.dataset.path;
+        if (!path) return;
+        
+        if (thumbnailCache.has(path)) {
+          applyThumbnail(entry.target, thumbnailCache.get(path));
+          observer.unobserve(entry.target);
+        } else {
+          if (!thumbnailQueue.find(item => item.path === path)) {
+            thumbnailQueue.push({ el: entry.target, path });
+            processThumbnailQueue();
+          }
+        }
+      }
+    });
+  }, { root: null, rootMargin: '50px', threshold: 0.1 });
+}
+
+async function processThumbnailQueue() {
+  if (isProcessingThumbnail || thumbnailQueue.length === 0) return;
+  isProcessingThumbnail = true;
+  
+  const item = thumbnailQueue.shift();
+  try {
+    if (!thumbnailCache.has(item.path)) {
+      const wrapper = item.el.querySelector('.hwp-thumbnail-wrapper');
+      if (wrapper) wrapper.classList.add('loading');
+      
+      const res = await fetch(`/api/file?path=${encodeURIComponent(item.path)}`);
+      if (res.ok) {
+        const arrayBuffer = await res.arrayBuffer();
+        const doc = new HwpDocument(new Uint8Array(arrayBuffer));
+        const svg = doc.renderPageSvg(0);
+        thumbnailCache.set(item.path, svg);
+        applyThumbnail(item.el, svg);
+      }
+      
+      if (thumbnailObserver) thumbnailObserver.unobserve(item.el);
+    }
+  } catch (err) {
+    console.error('썸네일 생성 실패:', item.path, err);
+    const wrapper = item.el.querySelector('.hwp-thumbnail-wrapper');
+    if (wrapper) {
+      wrapper.classList.remove('loading');
+      wrapper.innerHTML = `<div style="padding:10px;text-align:center;color:#999;font-size:12px;">미리보기 실패</div>`;
+    }
+  }
+  
+  isProcessingThumbnail = false;
+  setTimeout(processThumbnailQueue, 50);
+}
+
+function applyThumbnail(el, svg) {
+  const wrapper = el.querySelector('.hwp-thumbnail-wrapper');
+  if (wrapper) {
+    wrapper.classList.remove('loading');
+    wrapper.innerHTML = svg;
+  }
+}
+// -----------------------------------
+
 // 1. 전역 상태 정의
 const state = {
   currentPath: '',          // 현재 중앙 상세 뷰어 경로
@@ -1252,10 +1322,21 @@ function renderFileListTable(folders, files) {
           </div>
         `;
       } else {
+        let iconHtml = hwpSvg;
+        let isThumbnailMode = (state.viewMode === 'extra-large' || state.viewMode === 'large');
+        
+        if (isThumbnailMode && (extension === 'HWP' || extension === 'HWPX')) {
+          iconHtml = `<div class="hwp-thumbnail-wrapper loading"></div>`;
+        }
+        
         el.innerHTML = `
-          ${hwpSvg}
+          ${iconHtml}
           <span class="file-name-txt" title="${file.name}">${file.name}</span>
         `;
+        
+        if (thumbnailObserver && isThumbnailMode && (extension === 'HWP' || extension === 'HWPX')) {
+          thumbnailObserver.observe(el);
+        }
       }
     }
     
@@ -2241,6 +2322,7 @@ function initEvents() {
 
 // 12. 어플리케이션 초기화 부트스트랩
 async function bootstrap() {
+  initThumbnailObserver();
   initLayout();
   initEvents();
   

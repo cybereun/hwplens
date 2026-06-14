@@ -10,3 +10,4 @@ install/
 temp_*.py
 test_*
 .env
+rhwp/
