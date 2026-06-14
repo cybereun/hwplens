@@ -1,5 +1,10 @@
 # HwpLens - 한글 문서 전용 탐색기 및 고속 미리보기 뷰어
 
+![Version](https://img.shields.io/github/v/release/cybereun/hwplens?color=blue&label=version)
+![Developer](https://img.shields.io/badge/developer-cybereun-brightgreen)
+![License](https://img.shields.io/badge/license-Non--Commercial-red)
+![Platform](https://img.shields.io/badge/platform-Windows-lightgrey)
+
 HwpLens(한글 렌즈)는 Windows 11 파일 탐색기 스타일의 친숙한 레이아웃을 통해 로컬 한글 문서(.hwp, .hwpx)를 신속하게 탐색, 미리보기하고 관리할 수 있도록 설계된 한글 문서 특화 자산 관리 어플리케이션입니다.
 
 ---
