@@ -1,6 +1,6 @@
 {
   "name": "hwplens",
-  "version": "1.0.2",
+  "version": "1.0.3",
   "description": "HWP Document Explorer & Previewer",
   "main": "main.js",
   "scripts": {

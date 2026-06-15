@@ -4,7 +4,7 @@ const path = require('path');
 const os = require('os');
 
 const app = express();
-const PORT = 8800;
+const PORT = process.env.PORT || 8800;
 
 // 정적 파일 서빙 (public 폴더 - 브라우저 캐시 금지 적용)
 app.use(express.static(path.join(__dirname, 'public'), {
@@ -36,7 +36,7 @@ function getWindowsDriveLabels() {
   const labels = {};
   try {
     // powershell 조회 지연을 방지하기 위해 2초 타임아웃을 강제함
-    const output = execSync('powershell -Command "Get-CimInstance Win32_LogicalDisk | Select-Object DeviceID, VolumeName, DriveType | ConvertTo-Json"', { encoding: 'utf8', timeout: 2000 });
+    const output = execSync('powershell -NoProfile -Command "[Console]::OutputEncoding = [System.Text.Encoding]::UTF8; Get-CimInstance Win32_LogicalDisk | Select-Object DeviceID, VolumeName, DriveType | ConvertTo-Json"', { encoding: 'utf8', timeout: 2000 });
     if (output.trim()) {
       const list = JSON.parse(output);
       const items = Array.isArray(list) ? list : [list];
